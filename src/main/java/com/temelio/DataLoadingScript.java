@@ -1,4 +1,4 @@
-package org.example;
+package com.temelio;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.CSVReader;
@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.*;
 
 public class DataLoadingScript {
-
     private static final String BASE_URL = "http://localhost:8080";
     private static final OkHttpClient CLIENT = new OkHttpClient();
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
@@ -39,31 +38,68 @@ public class DataLoadingScript {
             for (int i = 1; i < rows.size(); ++i) {
                 String[] row = rows.get(i);
 
-                // Create Nonprofit object from CSV row
-                Nonprofit nonprofit = createNonprofitFromRow(row);
+                // create nonprofit json body
+                String jsonBody = createNonprofitJsonBody(row);
 
-                // Send POST request to create Nonprofit and get its ID
-                String id = sendPostRequest("/nonprofits", convertToJson(nonprofit));
-                nonprofitIds.put(nonprofit.getLegalName(), Integer.parseInt(id));
+                // Send POST request to create Nonprofit
+                String id = sendPostRequest("/nonprofits", jsonBody);
+
+                // Store Nonprofit ID by legal name
+                // row[0] is the legal name
+                nonprofitIds.put(row[0], Integer.parseInt(id));
             }
         }
     }
 
     // Method to create Nonprofit object from CSV row
-    private static Nonprofit createNonprofitFromRow(String[] row) {
-        Nonprofit nonprofit = new Nonprofit();
+    private static String createNonprofitJsonBody(String[] row) {
+       // use output2.java to create the json body
+
+        // create nonprofit object from the row using output2.java
+        Output2.Nonprofit nonprofit = new Output2.Nonprofit();
+
+        // set the values from the row to the nonprofit object
         nonprofit.setLegalName(row[0]);
         nonprofit.setEin(row[2]);
         nonprofit.setMission(row[5]);
 
-        Address address = new Address();
+        Output2.Address address = new Output2.Address();
         address.setStreet(row[13]);
         address.setCity(row[25]);
         address.setState(row[26]);
         address.setZip(row[27]);
 
         nonprofit.setAddress(address);
-        return nonprofit;
+
+        // convert the nonprofit object to json
+        String jsonBody = convertToJson(nonprofit);
+
+        return jsonBody;
+    }
+
+    // Method to create Submissions object from CSV row
+    private static String createSubmissionJsonBody(String[] row) {
+        // use output2.java to create the json body
+
+        // create submission object from the row using output2.java
+        Output2.GrantSubmission submission = new Output2.GrantSubmission();
+
+        // set the values from the row to the submission object
+        submission.setGrantName(row[1]);
+        submission.setAwardedAmount(row[5]);
+        submission.setGrantType(Output2.GrantSubmission.GrantType.valueOf(row[6]));
+        submission.setTags(Collections.singletonList(row[7]));
+
+        Output2.Duration duration = new Output2.Duration();
+        duration.setGrantStart(row[8]);
+        duration.setGrantEnd(row[9]);
+
+        submission.setDuration(duration);
+
+        // convert the submission object to json
+        String jsonBody = convertToJson(submission);
+
+        return jsonBody;
     }
 
     // Method to load and parse Submissions data from CSV
@@ -75,36 +111,16 @@ public class DataLoadingScript {
                 String[] row = rows.get(i);
 
                 // Create GrantSubmission object from CSV row
-                GrantSubmission submission = createSubmissionFromRow(row);
+                String jsonBody = createSubmissionJsonBody(row);
+
+                // take the nonprofit id from the nonprofitIds map
+                // row[0] is the legal name of the nonprofit
+                int nonprofitId = nonprofitIds.get(row[0]);
 
                 // Send POST request to create Submission
-                sendPostRequest("/nonprofits/" + submission.getNonprofitId() + "/submissions", convertToJson(submission));
+                sendPostRequest("/nonprofits/" + nonprofitId + "/submissions", jsonBody);
             }
         }
-    }
-
-    // Method to create GrantSubmission object from CSV row
-    private static GrantSubmission createSubmissionFromRow(String[] row) {
-        GrantSubmission submission = new GrantSubmission();
-        String nonProfit = row[0];
-        String grantName = row[1];
-        assert nonProfit != null;
-
-        // Retrieve Nonprofit ID from the map
-        int nonprofitId = nonprofitIds.get(nonProfit);
-
-        submission.setNonprofitId(nonprofitId);
-        submission.setGrantName(grantName);
-        submission.setAwardedAmount(row[5]);
-        submission.setGrantType(GrantType.valueOf(row[6]));
-        submission.setTags(Collections.singletonList(row[7]));
-
-        Duration duration = new Duration();
-        duration.setGrantStart(row[8]);
-        duration.setGrantEnd(row[9]);
-
-        submission.setDuration(duration);
-        return submission;
     }
 
     // Method to convert an object to JSON string
