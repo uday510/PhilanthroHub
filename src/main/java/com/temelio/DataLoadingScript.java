@@ -20,10 +20,12 @@ public class DataLoadingScript {
     public static void main(String[] args) {
         try {
             // Load and parse Nonprofits data
-            loadAndParseNonprofits("/Users/uday/Downloads/Temelio/nonprofit_data.csv");
+            String csvFilePath = null; // replace with the path to the nonprofits CSV file
+            loadAndParseNonprofits(csvFilePath);
 
             // Load and parse Submissions data
-            loadAndParseSubmissions("/Users/uday/Downloads/Temelio/nonprofit_submission_data.csv");
+            csvFilePath = null; // replace with the path to the submissions CSV file
+            loadAndParseSubmissions(csvFilePath);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -56,14 +58,14 @@ public class DataLoadingScript {
        // use output2.java to create the json body
 
         // create nonprofit object from the row using output2.java
-        Output2.Nonprofit nonprofit = new Output2.Nonprofit();
+        Output.Nonprofit nonprofit = new Output.Nonprofit();
 
         // set the values from the row to the nonprofit object
         nonprofit.setLegalName(row[0]);
         nonprofit.setEin(row[2]);
         nonprofit.setMission(row[5]);
 
-        Output2.Address address = new Output2.Address();
+        Output.Address address = new Output.Address();
         address.setStreet(row[13]);
         address.setCity(row[25]);
         address.setState(row[26]);
@@ -82,15 +84,15 @@ public class DataLoadingScript {
         // use output2.java to create the json body
 
         // create submission object from the row using output2.java
-        Output2.GrantSubmission submission = new Output2.GrantSubmission();
+        Output.GrantSubmission submission = new Output.GrantSubmission();
 
         // set the values from the row to the submission object
         submission.setGrantName(row[1]);
         submission.setAwardedAmount(row[5]);
-        submission.setGrantType(Output2.GrantSubmission.GrantType.valueOf(row[6]));
+        submission.setGrantType(Output.GrantSubmission.GrantType.valueOf(row[6]));
         submission.setTags(Collections.singletonList(row[7]));
 
-        Output2.Duration duration = new Output2.Duration();
+        Output.Duration duration = new Output.Duration();
         duration.setGrantStart(row[8]);
         duration.setGrantEnd(row[9]);
 
